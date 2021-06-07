@@ -1,0 +1,103 @@
+>>> from pyspark.sql import SparkSession
+>>> from pyspark.sql.functions import *
+>>> spark = SparkSession.builder.appName('Aggregate_example').getOrCreate()
+>>> sc = spark.sparkContext
+>>> schema = ["employee_name", "department", "salary"]
+>>> simpleData = [("James", "Sales", 3000),
+...     ("Michael", "Sales", 4600),
+...     ("Robert", "Sales", 4100),
+...     ("Maria", "Finance", 3000),
+...     ("James", "Sales", 3000),
+...     ("Scott", "Finance", 3300),
+...     ("Jen", "Finance", 3900),
+...     ("Jeff", "Marketing", 3000),
+...     ("Kumar", "Marketing", 2000),
+...     ("Saif", "Sales", 4100)
+...   ]
+
+>>> df = spark.createDataFrame(data=simpleData, schema = schema)
+>>> df.show()
++-------------+----------+------+
+|employee_name|department|salary|
++-------------+----------+------+
+|        James|     Sales|  3000|
+|      Michael|     Sales|  4600|
+|       Robert|     Sales|  4100|
+|        Maria|   Finance|  3000|
+|        James|     Sales|  3000|
+|        Scott|   Finance|  3300|
+|          Jen|   Finance|  3900|
+|         Jeff| Marketing|  3000|
+|        Kumar| Marketing|  2000|
+|         Saif|     Sales|  4100|
++-------------+----------+------+
+
+/*In PySpark approx_count_distinct() function returns the count of distinct items in a group.*/
+>>> print("approx_count_distinct: " + str(df.select(approx_count_distinct("salary")).collect()[0][0]))
+approx_count_distinct: 6
+
+/*avg() function returns the average of values in the input column.*/
+>>> print("avg: " + str(df.select(avg("salary")).collect()[0][0]))
+avg: 3400.0
+
+/*collect_list() function returns all values from an input column with duplicates.*/
+>>> df.select(collect_list("salary")).show(truncate=False)
++------------------------------------------------------------+
+|collect_list(salary)                                        |
++------------------------------------------------------------+
+|[3000, 4600, 4100, 3000, 3000, 3300, 3900, 3000, 2000, 4100]|
++------------------------------------------------------------+
+
+/*collect_set() function returns all values from an input column with duplicate values eliminated.*/
+>>> df.select(collect_set("salary")).show(truncate=False)
++------------------------------------+
+|collect_set(salary)                 |
++------------------------------------+
+|[4600, 3000, 3900, 4100, 3300, 2000]|
++------------------------------------+
+
+>>> df2 = df.select(countDistinct("department", "salary"))
+>>> df2.show(truncate=False)
++----------------------------------+
+|count(DISTINCT department, salary)|
++----------------------------------+
+|8                                 |
++----------------------------------+
+
+>>> print("count: "+str(df.select(count("salary")).collect()[0][0]))
+count: 10
+
+>>> df.select(first("salary")).show(truncate=False)
++-------------+
+|first(salary)|
++-------------+
+|3000         |
++-------------+
+
+>>> df.select(last("salary")).show(truncate=False)
++------------+
+|last(salary)|
++------------+
+|4100        |
++------------+
+
+>>> df.select(max("salary")).show(truncate=False)
++-----------+
+|max(salary)|
++-----------+
+|4600       |
++-----------+
+
+>>> df.select(min("salary")).show(truncate=False)
++-----------+
+|min(salary)|
++-----------+
+|2000       |
++-----------+
+
+>>> df.select(mean("salary")).show(truncate=False)
++-----------+
+|avg(salary)|
++-----------+
+|3400.0     |
++-----------+

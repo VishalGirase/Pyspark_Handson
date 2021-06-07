@@ -1,0 +1,16 @@
+>>> from pyspark import SparkContext
+>>> sc = SparkContext.getOrCreate()
+>>> df1 = sc.parallelize(["c","c","p","m","t"])
+>>> df2 = sc.parallelize(["c","m","k"])
+>>> res_union = df1.union(df2)
+>>> res_union.collect()
+['c', 'c', 'p', 'm', 't', 'c', 'm', 'k']
+>>> res_intersect = df1.intersection(df2)
+>>> res_intersect.collect()
+['m', 'c']
+>>> res_subtract = df1.subtract(df2)
+>>> res_subtract.collect()
+['t', 'p']
+>>> res_distinct = df1.distinct()
+>>> res_distinct.collect()
+['t', 'm', 'c', 'p']

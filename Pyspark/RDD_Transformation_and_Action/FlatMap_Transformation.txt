@@ -1,0 +1,23 @@
+>>> from pyspark import SparkContext
+>>> sc = SparkContext.getOrCreate()
+>>> data = ["Project Gutenbergs","Alices Adventures in Wonderland","Project Gutenbergs","Adventures in Wonderland","Project Gutenbergs"]
+>>> rdd=sc.parallelize(data)
+>>> rdd2=rdd.flatMap(lambda x: x.split(" "))
+>>> rdd2.collect()
+['Project', 'Gutenbergs', 'Alices', 'Adventures', 'in', 'Wonderland', 'Project', 'Gutenbergs', 'Adventures', 'in', 'Wonderland', 'Project', 'Gutenbergs']
+>>> for element in rdd2.collect():
+...     print(element)
+...
+Project
+Gutenbergs
+Alices
+Adventures
+in
+Wonderland
+Project
+Gutenbergs
+Adventures
+in
+Wonderland
+Project
+Gutenbergs

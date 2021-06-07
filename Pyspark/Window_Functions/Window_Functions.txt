@@ -1,0 +1,158 @@
+/*PySpark Window functions operate on a group of rows (like frame, partition) and return a single value for every input row. 
+PySpark SQL supports three kinds of window functions*/
+
+>>> from pyspark.sql import SparkSession
+>>> from pyspark.sql.functions import *
+>>> spark = SparkSession.builder.appName('WindowFunction_example').getOrCreate()
+>>> sc = spark.sparkContext
+>>> simpleData = [("James", "Sales", 3000), \
+...     ("Michael", "Sales", 4600),  \
+...     ("Robert", "Sales", 4100),   \
+...     ("Maria", "Finance", 3000),  \
+...     ("James", "Sales", 3000),    \
+...     ("Scott", "Finance", 3300),  \
+...     ("Jen", "Finance", 3900),    \
+...     ("Jeff", "Marketing", 3000), \
+...     ("Kumar", "Marketing", 2000),\
+...     ("Saif", "Sales", 4100) \
+...   ]
+
+>>> columns= ["employee_name", "department", "salary"]
+>>> df = spark.createDataFrame(data = simpleData, schema = columns)
+>>> df.printSchema()
+root
+ |-- employee_name: string (nullable = true)
+ |-- department: string (nullable = true)
+ |-- salary: long (nullable = true)
+>>> df.show(truncate=False)
++-------------+----------+------+
+|employee_name|department|salary|
++-------------+----------+------+
+|James        |Sales     |3000  |
+|Michael      |Sales     |4600  |
+|Robert       |Sales     |4100  |
+|Maria        |Finance   |3000  |
+|James        |Sales     |3000  |
+|Scott        |Finance   |3300  |
+|Jen          |Finance   |3900  |
+|Jeff         |Marketing |3000  |
+|Kumar        |Marketing |2000  |
+|Saif         |Sales     |4100  |
++-------------+----------+------+
+
+>>> from pyspark.sql.window import Window
+>>> windowSpec  = Window.partitionBy("department").orderBy("salary")
+>>> df.withColumn("row_number",row_number().over(windowSpec)).show(truncate=False)
++-------------+----------+------+----------+
+|employee_name|department|salary|row_number|
++-------------+----------+------+----------+
+|James        |Sales     |3000  |1         |
+|James        |Sales     |3000  |2         |
+|Robert       |Sales     |4100  |3         |
+|Saif         |Sales     |4100  |4         |
+|Michael      |Sales     |4600  |5         |
+|Maria        |Finance   |3000  |1         |
+|Scott        |Finance   |3300  |2         |
+|Jen          |Finance   |3900  |3         |
+|Kumar        |Marketing |2000  |1         |
+|Jeff         |Marketing |3000  |2         |
++-------------+----------+------+----------+
+>>> df.withColumn("rank",rank().over(windowSpec)).show()
++-------------+----------+------+----+
+|employee_name|department|salary|rank|
++-------------+----------+------+----+
+|        James|     Sales|  3000|   1|
+|        James|     Sales|  3000|   1|
+|       Robert|     Sales|  4100|   3|
+|         Saif|     Sales|  4100|   3|
+|      Michael|     Sales|  4600|   5|
+|        Maria|   Finance|  3000|   1|
+|        Scott|   Finance|  3300|   2|
+|          Jen|   Finance|  3900|   3|
+|        Kumar| Marketing|  2000|   1|
+|         Jeff| Marketing|  3000|   2|
++-------------+----------+------+----+
+>>> df.withColumn("dense_rank",dense_rank().over(windowSpec)).show()
++-------------+----------+------+----------+
+|employee_name|department|salary|dense_rank|
++-------------+----------+------+----------+
+|        James|     Sales|  3000|         1|
+|        James|     Sales|  3000|         1|
+|       Robert|     Sales|  4100|         2|
+|         Saif|     Sales|  4100|         2|
+|      Michael|     Sales|  4600|         3|
+|        Maria|   Finance|  3000|         1|
+|        Scott|   Finance|  3300|         2|
+|          Jen|   Finance|  3900|         3|
+|        Kumar| Marketing|  2000|         1|
+|         Jeff| Marketing|  3000|         2|
++-------------+----------+------+----------+
+>>> df.withColumn("percent_rank",percent_rank().over(windowSpec)).show()
++-------------+----------+------+------------+
+|employee_name|department|salary|percent_rank|
++-------------+----------+------+------------+
+|        James|     Sales|  3000|         0.0|
+|        James|     Sales|  3000|         0.0|
+|       Robert|     Sales|  4100|         0.5|
+|         Saif|     Sales|  4100|         0.5|
+|      Michael|     Sales|  4600|         1.0|
+|        Maria|   Finance|  3000|         0.0|
+|        Scott|   Finance|  3300|         0.5|
+|          Jen|   Finance|  3900|         1.0|
+|        Kumar| Marketing|  2000|         0.0|
+|         Jeff| Marketing|  3000|         1.0|
++-------------+----------+------+------------+
+>>> df.withColumn("ntile",ntile(2).over(windowSpec)).show()
++-------------+----------+------+-----+
+|employee_name|department|salary|ntile|
++-------------+----------+------+-----+
+|        James|     Sales|  3000|    1|
+|        James|     Sales|  3000|    1|
+|       Robert|     Sales|  4100|    1|
+|         Saif|     Sales|  4100|    2|
+|      Michael|     Sales|  4600|    2|
+|        Maria|   Finance|  3000|    1|
+|        Scott|   Finance|  3300|    1|
+|          Jen|   Finance|  3900|    2|
+|        Kumar| Marketing|  2000|    1|
+|         Jeff| Marketing|  3000|    2|
++-------------+----------+------+-----+
+
+>>> windowSpecAgg  = Window.partitionBy("department")
+>>> from pyspark.sql.functions import col,avg,sum,min,max,row_number
+>>> df.withColumn("row",row_number().over(windowSpec)) \
+...   .withColumn("avg", avg(col("salary")).over(windowSpecAgg)) \
+...   .withColumn("sum", sum(col("salary")).over(windowSpecAgg)) \
+...   .withColumn("min", min(col("salary")).over(windowSpecAgg)) \
+...   .withColumn("max", max(col("salary")).over(windowSpecAgg)) \
+...   .show()
++-------------+----------+------+---+------+-----+----+----+
+|employee_name|department|salary|row|   avg|  sum| min| max|
++-------------+----------+------+---+------+-----+----+----+
+|        James|     Sales|  3000|  1|3760.0|18800|3000|4600|
+|        James|     Sales|  3000|  2|3760.0|18800|3000|4600|
+|       Robert|     Sales|  4100|  3|3760.0|18800|3000|4600|
+|         Saif|     Sales|  4100|  4|3760.0|18800|3000|4600|
+|      Michael|     Sales|  4600|  5|3760.0|18800|3000|4600|
+|        Maria|   Finance|  3000|  1|3400.0|10200|3000|3900|
+|        Scott|   Finance|  3300|  2|3400.0|10200|3000|3900|
+|          Jen|   Finance|  3900|  3|3400.0|10200|3000|3900|
+|        Kumar| Marketing|  2000|  1|2500.0| 5000|2000|3000|
+|         Jeff| Marketing|  3000|  2|2500.0| 5000|2000|3000|
++-------------+----------+------+---+------+-----+----+----+
+
+
+>>> df.withColumn("row",row_number().over(windowSpec)) \
+...   .withColumn("avg", avg(col("salary")).over(windowSpecAgg)) \
+...   .withColumn("sum", sum(col("salary")).over(windowSpecAgg)) \
+...   .withColumn("min", min(col("salary")).over(windowSpecAgg)) \
+...   .withColumn("max", max(col("salary")).over(windowSpecAgg)) \
+...   .where(col("row")==1).select("department","avg","sum","min","max") \
+...   .show()
++----------+------+-----+----+----+
+|department|   avg|  sum| min| max|
++----------+------+-----+----+----+
+|     Sales|3760.0|18800|3000|4600|
+|   Finance|3400.0|10200|3000|3900|
+| Marketing|2500.0| 5000|2000|3000|
++----------+------+-----+----+----+

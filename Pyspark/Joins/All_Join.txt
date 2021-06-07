@@ -1,0 +1,77 @@
+>>> from pyspark.sql import SparkSession
+>>> spark = SparkSession.builder.appName('joins_example').getOrCreate()
+>>> sc = spark.sparkContext
+>>> dataset1 = [  {  'key' : 'abc',  'val11' : 1.1,  'val12' : 1.2  },  {  'key' : 'def',  'val11' : 3.0,  'val12' : 3.4  }]
+>>> dataset2 = [  {  'key' : 'abc',  'val21' : 2.1,  'val22' : 2.2  },  {  'key' : 'xyz',  'val21' : 3.1,  'val22' : 3.2  }]
+>>> rdd1 = sc.parallelize(dataset1)
+>>> df1 = spark.createDataFrame(rdd1)
+>>> df1.show()
++---+-----+-----+
+|key|val11|val12|
++---+-----+-----+
+|abc|  1.1|  1.2|
+|def|  3.0|  3.4|
++---+-----+-----+
+>>> rdd2 = sc.parallelize(dataset2)
+>>> df2 = spark.createDataFrame(rdd2)
+>>> df2.show()
++---+-----+-----+
+|key|val21|val22|
++---+-----+-----+
+|abc|  2.1|  2.2|
+|xyz|  3.1|  3.2|
++---+-----+-----+
+
+>>> df_inner = df1.join(df2, on=['key'], how = 'inner')
+>>> df_inner.show()
++---+-----+-----+-----+-----+
+|key|val11|val12|val21|val22|
++---+-----+-----+-----+-----+
+|abc|  1.1|  1.2|  2.1|  2.2|
++---+-----+-----+-----+-----+
+
+>>> df_outer = df1.join(df2, on=['key'], how = 'outer')
+>>> df_outer.show()
++---+-----+-----+-----+-----+
+|key|val11|val12|val21|val22|
++---+-----+-----+-----+-----+
+|xyz| null| null|  3.1|  3.2|
+|abc|  1.1|  1.2|  2.1|  2.2|
+|def|  3.0|  3.4| null| null|
++---+-----+-----+-----+-----+
+
+>>> df_left = df1.join(df2, on=['key'], how = 'left')
+>>> df_left.show()
++---+-----+-----+-----+-----+
+|key|val11|val12|val21|val22|
++---+-----+-----+-----+-----+
+|abc|  1.1|  1.2|  2.1|  2.2|
+|def|  3.0|  3.4| null| null|
++---+-----+-----+-----+-----+
+
+>>> df_right = df1.join(df2, on=['key'], how = 'right')
+>>> df_right.show()
++---+-----+-----+-----+-----+
+|key|val11|val12|val21|val22|
++---+-----+-----+-----+-----+
+|xyz| null| null|  3.1|  3.2|
+|abc|  1.1|  1.2|  2.1|  2.2|
++---+-----+-----+-----+-----+
+
+/*This is like inner join, with only the left dataframe columns and values are selected.*/
+>>> df_semi_join  = df1.join(df2, on=['key'], how='left_semi')
+>>> df_semi_join.show()
++---+-----+-----+
+|key|val11|val12|
++---+-----+-----+
+|abc|  1.1|  1.2|
++---+-----+-----+
+
+/*This join is like df1-df2, as it selects all rows from df1 that are not present in df2.*/
+>>> df_left_anti  = df1.join(df2, on=['key'], how='left_anti')
+>>> df_left_anti.show()
++---+-----+-----+
+|key|val11|val12|
++---+-----+-----+
+|def|  3.0|  3.4|
++---+-----+-----+

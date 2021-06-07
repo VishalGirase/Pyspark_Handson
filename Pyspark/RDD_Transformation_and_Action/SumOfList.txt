@@ -1,0 +1,13 @@
+/*This function initialize X variable with default integer value 0, 
+adds up an element every when reduce method is called and returns final value when all elements of RDD Y are processed.
+ It returns the final value rather than another RDD.*/
+
+
+>>> from pyspark import SparkContext
+>>> sc = SparkContext.getOrCreate()
+>>> lst = [1, 2, 3, 4, 5]
+>>> rdd = sc.parallelize(lst)
+>>> da = rdd.reduce(lambda x,y : x+y)
+>>> da
+15
+>>>

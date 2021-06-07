@@ -1,0 +1,10 @@
+>>> from pyspark import SparkContext
+>>> sc = SparkContext.getOrCreate()
+>>> data = ["Project","Gutenbergs","Alices","Adventures","in","Wonderland","Project","Gutenbergs","Adventures","in","Wonderland","Project","Gutenbergs"]
+>>> rdd=sc.parallelize(data)
+>>> rdd2=rdd.map(lambda x: (x,1))
+>>> rdd3 = rdd2.reduceByKey(lambda a,b:a +b)
+>>> rdd2.collect()
+[('Project', 1), ('Gutenbergs', 1), ('Alices', 1), ('Adventures', 1), ('in', 1), ('Wonderland', 1), ('Project', 1), ('Gutenbergs', 1), ('Adventures', 1), ('in', 1), ('Wonderland', 1), ('Project', 1), ('Gutenbergs', 1)]
+>>> rdd3.collect()
+[('Alices', 1), ('Gutenbergs', 3), ('Adventures', 2), ('Wonderland', 2), ('Project', 3), ('in', 2)]

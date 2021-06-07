@@ -1,0 +1,7 @@
+>>> from pyspark import SparkContext
+>>> sc = SparkContext.getOrCreate()
+>>> rdd = sc.parallelize (["scala", "java", "hadoop", "spark", "akka","spark vs hadoop", "pyspark","pyspark and spark"])
+>>> words_filter = rdd.filter(lambda x: 'spark' in x)
+>>> words_filter.collect()
+['spark', 'spark vs hadoop', 'pyspark', 'pyspark and spark']
+>>>
